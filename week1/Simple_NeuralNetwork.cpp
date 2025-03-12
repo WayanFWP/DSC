@@ -98,14 +98,13 @@ int main() {
   int           PERCEPTRON_SIZE = 2048;
   NeuralNetwork nn(INPUT_SIZE, PERCEPTRON_SIZE);
   cout << endl;
-  
+
   char choice;
+  
   cout << "Do you want to input the binary input? (y/n): ";
   cin >> choice;
-  if (choice == 'y' || choice == 'Y') {
-    nn.inputUser();
-  } else {
-    nn.testcase();
-  }
+  if (choice == 'y' || choice == 'Y') nn.inputUser();
+  else nn.testcase();
+
   return 0;
 }
