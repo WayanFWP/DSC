@@ -145,7 +145,7 @@ void display_dataset(const vector<vector<vector<double>>>& letters) {
 void test_files(MLP& mlp) {
   cout << "\n🔍 Loading test matrices from 'test/' folder...\n";
   for (const auto& entry : fs::directory_iterator("test")) {
-    string test_filename = entry.path().filename();
+    string test_filename = entry.path().filename().string();
     cout << "📂 Testing file: " << test_filename << endl;
 
     vector<vector<double>> test_matrix     = load_test_matrix(test_filename);
