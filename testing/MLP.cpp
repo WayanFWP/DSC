@@ -11,6 +11,30 @@ using namespace std;
 #define EPOCHS 350
 #define LEARNING_RATE 0.1
 
+/**
+ * @brief Entry point for the MLP classifier application.
+ *
+ * This function initializes and trains a Multi-Layer Perceptron (MLP) model with a dataset
+ * of letters and their variations. The application performs the following operations:
+ * 
+ * 1. Creates an instance of the MLP model using predefined constants for input size, hidden size,
+ *    output size, and learning rate.
+ * 2. Loads the dataset dynamically into memory, which consists of two parts:
+ *    - A primary set of letters.
+ *    - A set of variations for each letter.
+ * 3. Prepares the training data:
+ *    - Flattens the 2D matrices representing each letter and its variations.
+ *    - Generates corresponding target vectors for each label.
+ * 4. Trains the MLP model over a specified number of epochs using the prepared inputs and targets.
+ * 5. Enters an interactive loop, offering the user the following options:
+ *    - Display a letter from the dataset upon user request.
+ *    - Test the trained model on files from a test directory.
+ *    - Input a custom matrix for prediction.
+ *
+ * The loop continues indefinitely, allowing repeated interactions with the model until the user terminates the program.
+ *
+ * @return int Returns 0 upon successful program termination.
+ */
 int main() {
   MLP mlp(INPUT_SIZE, HIDDEN_SIZE, OUTPUT_SIZE, LEARNING_RATE);
 

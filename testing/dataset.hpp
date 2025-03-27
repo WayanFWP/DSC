@@ -71,6 +71,7 @@ inline vector<double> get_target(char letter) {
     return target;
 }
 
+// Function to load a 12x12 matrix from test case file
 vector<vector<double>> load_test_matrix(const string& filename) {
     vector<vector<double>> matrix(12, vector<double>(12, 0));
     ifstream file("test/" + filename); // Load file from test directory
