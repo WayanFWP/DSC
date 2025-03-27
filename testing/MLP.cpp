@@ -38,32 +38,34 @@ int main() {
 
   mlp.train(inputs, targets, EPOCHS);
 
-  auto promptToDisplayDataset = []() -> bool {
-    char choice;
-    std::cout << "Do you want to see the letter? (y/n): ";
-    std::cin >> choice;
-    return choice == 'y';
-  };
+  while (true) {
+    auto promptToDisplayDataset = []() -> bool {
+      char choice;
+      std::cout << "Do you want to see the letter? (y/n): ";
+      std::cin >> choice;
+      return choice == 'y';
+    };
 
-  if (promptToDisplayDataset()) {
-    display_dataset(letters);
-  }
+    if (promptToDisplayDataset()) {
+      display_dataset(letters);
+    }
 
-  int mode = 0;
-  std::cout << "\n🤖 MLP Classifier\n"
-            << "Enter 1 to test the model on /test directory\n"
-            << "Enter 2 to input your own matrix\n"
-            << "Your choice: ";
-  std::cin >> mode;
+    int mode = 0;
+    std::cout << "\n🤖 MLP Classifier\n"
+              << "Enter 1 to test the model on /test directory\n"
+              << "Enter 2 to input your own matrix\n"
+              << "Your choice: ";
+    std::cin >> mode;
 
-  switch (mode) {
-  case 2:
-    predict_user_input(mlp);
-    break;
-  case 1:
-  default:
-    test_files(mlp);
-    break;
+    switch (mode) {
+    case 2:
+      predict_user_input(mlp);
+      break;
+    case 1:
+    default:
+      test_files(mlp);
+      break;
+    }
   }
 
   return 0;
