@@ -214,9 +214,9 @@ void display_dataset(const vector<vector<vector<double>>>& letters) {
   }
 }
 
-// Function to test all files in "test/" directory
+// Function to test all files in "testcase/" directory
 void test_files(MLP& mlp) {
-  cout << "\n🔍 Loading test matrices from 'test/' folder...\n";
+  cout << "\n🔍 Loading test matrices from 'testcase/' folder...\n";
   for (const auto& entry : fs::directory_iterator("test")) {
     string test_filename = entry.path().filename().string();
     cout << "📂 Testing file: " << test_filename << endl;
