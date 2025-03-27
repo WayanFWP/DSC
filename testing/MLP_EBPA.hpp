@@ -57,9 +57,11 @@ class MLP {
         bias_o(output_size, 0.0),
         weights_ih(input, vector<double>(hidden)),
         weights_ho(hidden, vector<double>(output)) {
-    random_device                     rd; // Creates a non-deterministic random device which is typically used to produce a seed.
-    mt19937                           gen(rd()); // Initializes an instance of the Mersenne Twister 19937 generator with the seed from rd. Mersenne Twister is a widely used pseudorandom number generator.
-    uniform_real_distribution<double> dist(-1.0, 1.0); // Defines a uniform real distribution that will produce random double values ranging from -1.0 to 1.0 each time it is used.
+    random_device rd;  // Creates a non-deterministic random device which is typically used to produce a seed.
+    mt19937       gen(
+        rd());  // Initializes an instance of the Mersenne Twister 19937 generator with the seed from rd. Mersenne Twister is a widely used pseudorandom number generator.
+    uniform_real_distribution<double>
+        dist(-1.0, 1.0);  // Defines a uniform real distribution that will produce random double values ranging from -1.0 to 1.0 each time it is used.
 
     for (int i = 0; i < input_size; ++i)
       for (int j = 0; j < hidden_size; ++j) weights_ih[i][j] = dist(gen);
@@ -157,10 +159,22 @@ class MLP {
         backward(inputs[i], targets[i]);
         for (int j = 0; j < output_size; ++j) total_error += pow(targets[i][j] - output[j], 2);
       }
-      cout << "Epoch " << e + 1 << " - Error: " << total_error / inputs.size() << endl;
+      if (e == epochs - 1)
+        cout << "Epoch " << e + 1 << " - Error: " << total_error / inputs.size() << endl;
     }
   }
 
+  /**
+   * Computes the predicted class index from the provided input features.
+   *
+   * This function performs a forward pass through the network using the given input,
+   * then finds the index of the maximum element in the resulting output vector to 
+   * determine the predicted class.
+   *
+   * @param input A constant reference to a vector of doubles that represents 
+   *              the input features for the prediction.
+   * @return An integer indicating the index of the predicted class.
+   */
   int predict(const vector<double>& input) {
     vector<double> result = forward(input);
     return distance(result.begin(), max_element(result.begin(), result.end()));
