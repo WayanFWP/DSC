@@ -8,10 +8,10 @@
 
 class MLP {
  private:
-  static constexpr int INPUT_SIZE   = 2;
-  static constexpr int HIDDEN1_SIZE = 8;
-  static constexpr int HIDDEN2_SIZE = 6;
-  static constexpr int OUTPUT_SIZE  = 1;
+  static const int INPUT_SIZE   = 2;
+  static const int HIDDEN1_SIZE = 8;
+  static const int HIDDEN2_SIZE = 6;
+  static const int OUTPUT_SIZE  = 1;
 
   // Weights & biases
   double weights_input_hidden1[INPUT_SIZE][HIDDEN1_SIZE];
@@ -91,7 +91,9 @@ class MLP {
         output = sigmoid(sum_out);
 
         // Backpropagation
+        
         double error_output = (target - output) * sigmoid_derivative(output);
+
         double error_hidden2[HIDDEN2_SIZE];
         for (int k = 0; k < HIDDEN2_SIZE; ++k) error_hidden2[k] = error_output * weights_hidden2_output[k] * sigmoid_derivative(hidden2[k]);
 

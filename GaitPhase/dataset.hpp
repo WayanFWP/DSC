@@ -24,7 +24,7 @@ class Dataset {
   bool loadFromFile(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
-      std::cerr << "Gagal membuka file: " << path << std::endl;
+      std::cerr << "Failed to open file: " << path << std::endl;
       return false;
     }
 
@@ -42,12 +42,10 @@ class Dataset {
     return true;
   }
 
-  // Menambahkan noise acak kecil pada data
   void addNoiseToData(double noise_factor = 0.01) {
     for (auto& d : data) {
-      // Tambahkan noise acak kecil ke setiap fitur
-      d.x1 += (rand() % 2001 - 1000) / 100000.0 * noise_factor;  // Random noise antara -0.01 dan 0.01
-      d.x2 += (rand() % 2001 - 1000) / 100000.0 * noise_factor;  // Random noise antara -0.01 dan 0.01
+      d.x1 += (rand() % 2001 - 1000) / 100000.0 * noise_factor;  
+      d.x2 += (rand() % 2001 - 1000) / 100000.0 * noise_factor;  
     }
   }
 
