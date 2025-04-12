@@ -8,9 +8,8 @@ Dataset dataset;
 Dataset testCase;
 
 int main() {
-  std::srand(std::time(0));  // initiate random seed
-
-  if (!dataset.loadFromFile("data/labeled_dataset.txt"))
+  std::srand(std::time(0));
+  if (!dataset.loadFromFile("data/dataset.txt"))
     return 1;
 
   std::vector<std::pair<std::vector<double>, int>> training_data;
@@ -23,11 +22,13 @@ int main() {
 
   MLP model;
   std::cout << "Training..." << std::endl;
-  model.train(training_data, 10000, 0.1);  // epoch 10000, learning rate 0.1
-  std::cout << "Training selesai." << std::endl;
+  model.train(training_data, 200, 0.1);  // epoch 500, learning rate 0.1
+  std::cout << "Training section done." << std::endl;
 
   if (!testCase.loadFromFile("test/testCase.txt"))
     return 1;
+
+  testCase.addNoiseToData(0.7);  // Add noise to test data
 
   std::vector<std::pair<std::vector<double>, int>> testData;
   for (const auto& point : testCase.data) testData.push_back({{point.x1, point.x2}, point.label});
@@ -36,7 +37,7 @@ int main() {
   for (const auto& t : testData) (t.second == 0) ? test0++ : test1++;
   std::cout << "TestCase Label 0: " << test0 << ", Label 1: " << test1 << std::endl;
 
-  int count   = 1;
+  int count = 1;
 
   for (const auto& sample : testData) {
     double output    = model.predict(sample.first[0], sample.first[1]);
@@ -46,7 +47,7 @@ int main() {
     std::string targetLabel  = (sample.second == 0) ? "stance (0)" : "swing (1)";
 
     std::cout << count << " Input: (" << sample.first[0] << ", " << sample.first[1] << ")  "
-              << "\tTarget: " << targetLabel << "\tPredicted: " << predictLabel << "\tOutput: " << output << std::endl;
+              << "\n|>=============================> Target: " << targetLabel << "\tPredicted: " << predictLabel << "\tOutput: " << output << std::endl;
 
     if (predicted == sample.second)
       correct++;
@@ -54,15 +55,14 @@ int main() {
   }
   double accuracy = 100.0 * correct / testData.size();
 
-
   while (true) {
-    std::cout << "Do you want to see the accuracy? (a): ";
+    std::cout << "\nDo you want to see the accuracy? (a): ";
     char choice;
     std::cin >> choice;
     if (choice == 'a')
       std::cout << "\nAccuracy: " << accuracy << "%" << std::endl;
     else
-     break;
+      break;
   }
 
   return 0;
