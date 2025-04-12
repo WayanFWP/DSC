@@ -4,16 +4,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
-#include <random>
 #include <vector>
-
-double sigmoid(double x) {
-  return 1.0 / (1.0 + std::exp(-x));
-}
-
-double sigmoid_derivative(double x) {
-  return x * (1.0 - x);
-}
 
 class MLP {
  private:
@@ -37,26 +28,13 @@ class MLP {
   double hidden2[HIDDEN2_SIZE];
   double output;
 
-  // Dropout probabilities
-  double dropout_prob = 0.5;
-
-  // Dropout mask for hidden layers
-  std::vector<bool> hidden1_dropout_mask;
-  std::vector<bool> hidden2_dropout_mask;
-
-  // Random generator for dropout
-  std::random_device rd;
-  std::mt19937       gen;
+  double sigmoid(double x) { return 1.0 / (1.0 + std::exp(-x)); }
+  double sigmoid_derivative(double x) { return x * (1.0 - x); }
 
  public:
-  MLP(double dropout_rate = 0.5) : dropout_prob(dropout_rate), gen(rd()) {
-    // Initialize the dropout masks with true (all neurons active)
-    hidden1_dropout_mask.resize(HIDDEN1_SIZE, true);
-    hidden2_dropout_mask.resize(HIDDEN2_SIZE, true);
-
+  MLP() {
     std::srand(std::time(0));
 
-    // Initialize weights and biases
     for (int i = 0; i < INPUT_SIZE; ++i)
       for (int j = 0; j < HIDDEN1_SIZE; ++j) weights_input_hidden1[i][j] = ((double) rand() / RAND_MAX - 0.5);
 
@@ -73,46 +51,25 @@ class MLP {
     bias_output = ((double) rand() / RAND_MAX - 0.5);
   }
 
-  void applyDropout() {
-    // Apply dropout to hidden layers
-    std::uniform_real_distribution<> dis(0.0, 1.0);
-
-    for (int j = 0; j < HIDDEN1_SIZE; ++j) {
-      hidden1_dropout_mask[j] = (dis(gen) < dropout_prob);
-    }
-
-    for (int k = 0; k < HIDDEN2_SIZE; ++k) {
-      hidden2_dropout_mask[k] = (dis(gen) < dropout_prob);
-    }
-  }
-
   double predict(double x1, double x2) {
-    for (int j = 0; j < HIDDEN1_SIZE; ++j) {
-      hidden1[j] = sigmoid(x1 * weights_input_hidden1[0][j] +
-                           x2 * weights_input_hidden1[1][j] +
-                           bias_hidden1[j]);
-    }
-  
+    for (int j = 0; j < HIDDEN1_SIZE; ++j)
+      hidden1[j] = sigmoid(x1 * weights_input_hidden1[0][j] + x2 * weights_input_hidden1[1][j] + bias_hidden1[j]);
+
     for (int k = 0; k < HIDDEN2_SIZE; ++k) {
       double sum = bias_hidden2[k];
-      for (int j = 0; j < HIDDEN1_SIZE; ++j)
-        sum += hidden1[j] * weights_hidden1_hidden2[j][k];
+      for (int j = 0; j < HIDDEN1_SIZE; ++j) sum += hidden1[j] * weights_hidden1_hidden2[j][k];
       hidden2[k] = sigmoid(sum);
     }
-  
+
     double sum_out = bias_output;
-    for (int k = 0; k < HIDDEN2_SIZE; ++k)
-      sum_out += hidden2[k] * weights_hidden2_output[k];
-  
+    for (int k = 0; k < HIDDEN2_SIZE; ++k) sum_out += hidden2[k] * weights_hidden2_output[k];
+
     output = sigmoid(sum_out);
     return output;
   }
-  
 
   void train(const std::vector<std::pair<std::vector<double>, int>>& dataset, int epochs = 1000, double lr = 0.1) {
     for (int epoch = 0; epoch < epochs; ++epoch) {
-      applyDropout();  // Apply dropout at each epoch during training
-
       for (const auto& sample : dataset) {
         double x1     = sample.first[0];
         double x2     = sample.first[1];
@@ -145,7 +102,6 @@ class MLP {
           error_hidden1[j] *= sigmoid_derivative(hidden1[j]);
         }
 
-        // Update weights and biases
         for (int k = 0; k < HIDDEN2_SIZE; ++k) weights_hidden2_output[k] += lr * error_output * hidden2[k];
         bias_output += lr * error_output;
 
