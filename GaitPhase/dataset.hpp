@@ -24,7 +24,7 @@ class Dataset {
   bool loadFromFile(const std::string& path) {
     std::ifstream file(path);
     if (!file.is_open()) {
-      std::cerr << "failed attempt open file: " << path << std::endl;
+      std::cerr << "Gagal membuka file: " << path << std::endl;
       return false;
     }
 
@@ -32,9 +32,8 @@ class Dataset {
     while (std::getline(file, line)) {
       std::istringstream iss(line);
       double             x1, x2;
-      int                label;
-
-      if (iss >> x1 >> x2 >> label) {
+      if (iss >> x1 >> x2) {
+        int label = (x1 < 0.1 && x2 < 0.1) ? 0 : 1;  // ✅ Auto-label
         data.push_back({x1, x2, label});
       }
     }
