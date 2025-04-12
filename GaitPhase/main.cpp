@@ -56,11 +56,13 @@ int main() {
 
 
   while (true) {
-    std::cout << "\nDo you want to see the accuracy? (a): ";
+    std::cout << "Do you want to see the accuracy? (a): ";
     char choice;
     std::cin >> choice;
     if (choice == 'a')
       std::cout << "\nAccuracy: " << accuracy << "%" << std::endl;
+    else
+     break;
   }
 
   return 0;
