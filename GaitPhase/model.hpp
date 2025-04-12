@@ -4,6 +4,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <random>
 #include <vector>
 
 double sigmoid(double x) {
@@ -11,93 +12,152 @@ double sigmoid(double x) {
 }
 
 double sigmoid_derivative(double x) {
-  return x * (1.0 - x);  // untuk output dari sigmoid, bukan input
+  return x * (1.0 - x);
 }
 
 class MLP {
  private:
-  static constexpr int INPUT_SIZE  = 2;
-  static constexpr int HIDDEN_SIZE = 16;
-  static constexpr int OUTPUT_SIZE = 1;
+  static constexpr int INPUT_SIZE   = 2;
+  static constexpr int HIDDEN1_SIZE = 8;
+  static constexpr int HIDDEN2_SIZE = 6;
+  static constexpr int OUTPUT_SIZE  = 1;
 
-  // Bobot dan bias
-  double weights_input_hidden[INPUT_SIZE][HIDDEN_SIZE];
-  double bias_hidden[HIDDEN_SIZE];
-  double weights_hidden_output[HIDDEN_SIZE];
+  // Weights & biases
+  double weights_input_hidden1[INPUT_SIZE][HIDDEN1_SIZE];
+  double bias_hidden1[HIDDEN1_SIZE];
+
+  double weights_hidden1_hidden2[HIDDEN1_SIZE][HIDDEN2_SIZE];
+  double bias_hidden2[HIDDEN2_SIZE];
+
+  double weights_hidden2_output[HIDDEN2_SIZE];
   double bias_output;
 
-  // Aktivasi
-  double hidden[HIDDEN_SIZE];
+  // Activations
+  double hidden1[HIDDEN1_SIZE];
+  double hidden2[HIDDEN2_SIZE];
   double output;
 
- public:
-  MLP() {
-    std::srand(std::time(0));
-    for (int i = 0; i < INPUT_SIZE; ++i)
-      for (int j = 0; j < HIDDEN_SIZE; ++j) weights_input_hidden[i][j] = ((double) rand() / RAND_MAX - 0.5);
+  // Dropout probabilities
+  double dropout_prob = 0.5;
 
-    for (int j = 0; j < HIDDEN_SIZE; ++j) {
-      bias_hidden[j]           = ((double) rand() / RAND_MAX - 0.5);
-      weights_hidden_output[j] = ((double) rand() / RAND_MAX - 0.5);
+  // Dropout mask for hidden layers
+  std::vector<bool> hidden1_dropout_mask;
+  std::vector<bool> hidden2_dropout_mask;
+
+  // Random generator for dropout
+  std::random_device rd;
+  std::mt19937       gen;
+
+ public:
+  MLP(double dropout_rate = 0.5) : dropout_prob(dropout_rate), gen(rd()) {
+    // Initialize the dropout masks with true (all neurons active)
+    hidden1_dropout_mask.resize(HIDDEN1_SIZE, true);
+    hidden2_dropout_mask.resize(HIDDEN2_SIZE, true);
+
+    std::srand(std::time(0));
+
+    // Initialize weights and biases
+    for (int i = 0; i < INPUT_SIZE; ++i)
+      for (int j = 0; j < HIDDEN1_SIZE; ++j) weights_input_hidden1[i][j] = ((double) rand() / RAND_MAX - 0.5);
+
+    for (int j = 0; j < HIDDEN1_SIZE; ++j) {
+      bias_hidden1[j] = ((double) rand() / RAND_MAX - 0.5);
+      for (int k = 0; k < HIDDEN2_SIZE; ++k) weights_hidden1_hidden2[j][k] = ((double) rand() / RAND_MAX - 0.5);
+    }
+
+    for (int k = 0; k < HIDDEN2_SIZE; ++k) {
+      bias_hidden2[k]           = ((double) rand() / RAND_MAX - 0.5);
+      weights_hidden2_output[k] = ((double) rand() / RAND_MAX - 0.5);
     }
 
     bias_output = ((double) rand() / RAND_MAX - 0.5);
   }
 
-  double predict(double x1, double x2) {
-    // Feedforward
-    for (int j = 0; j < HIDDEN_SIZE; ++j) {
-      hidden[j] = sigmoid(x1 * weights_input_hidden[0][j] + x2 * weights_input_hidden[1][j] + bias_hidden[j]);
+  void applyDropout() {
+    // Apply dropout to hidden layers
+    std::uniform_real_distribution<> dis(0.0, 1.0);
+
+    for (int j = 0; j < HIDDEN1_SIZE; ++j) {
+      hidden1_dropout_mask[j] = (dis(gen) < dropout_prob);
     }
 
-    double sum = bias_output;
-    for (int j = 0; j < HIDDEN_SIZE; ++j) sum += hidden[j] * weights_hidden_output[j];
+    for (int k = 0; k < HIDDEN2_SIZE; ++k) {
+      hidden2_dropout_mask[k] = (dis(gen) < dropout_prob);
+    }
+  }
 
-    output = sigmoid(sum);
+  double predict(double x1, double x2) {
+    for (int j = 0; j < HIDDEN1_SIZE; ++j) {
+      hidden1[j] = sigmoid(x1 * weights_input_hidden1[0][j] +
+                           x2 * weights_input_hidden1[1][j] +
+                           bias_hidden1[j]);
+    }
+  
+    for (int k = 0; k < HIDDEN2_SIZE; ++k) {
+      double sum = bias_hidden2[k];
+      for (int j = 0; j < HIDDEN1_SIZE; ++j)
+        sum += hidden1[j] * weights_hidden1_hidden2[j][k];
+      hidden2[k] = sigmoid(sum);
+    }
+  
+    double sum_out = bias_output;
+    for (int k = 0; k < HIDDEN2_SIZE; ++k)
+      sum_out += hidden2[k] * weights_hidden2_output[k];
+  
+    output = sigmoid(sum_out);
     return output;
   }
+  
 
   void train(const std::vector<std::pair<std::vector<double>, int>>& dataset, int epochs = 1000, double lr = 0.1) {
     for (int epoch = 0; epoch < epochs; ++epoch) {
+      applyDropout();  // Apply dropout at each epoch during training
+
       for (const auto& sample : dataset) {
         double x1     = sample.first[0];
         double x2     = sample.first[1];
         int    target = sample.second;
 
         // Feedforward
-        for (int j = 0; j < HIDDEN_SIZE; ++j) {
-          hidden[j] = sigmoid(x1 * weights_input_hidden[0][j] + x2 * weights_input_hidden[1][j] + bias_hidden[j]);
+        for (int j = 0; j < HIDDEN1_SIZE; ++j)
+          hidden1[j] = sigmoid(x1 * weights_input_hidden1[0][j] + x2 * weights_input_hidden1[1][j] + bias_hidden1[j]);
+
+        for (int k = 0; k < HIDDEN2_SIZE; ++k) {
+          double sum = bias_hidden2[k];
+          for (int j = 0; j < HIDDEN1_SIZE; ++j) sum += hidden1[j] * weights_hidden1_hidden2[j][k];
+          hidden2[k] = sigmoid(sum);
         }
 
-        double sum = bias_output;
-        for (int j = 0; j < HIDDEN_SIZE; ++j) sum += hidden[j] * weights_hidden_output[j];
+        double sum_out = bias_output;
+        for (int k = 0; k < HIDDEN2_SIZE; ++k) sum_out += hidden2[k] * weights_hidden2_output[k];
 
-        output = sigmoid(sum);
+        output = sigmoid(sum_out);
 
         // Backpropagation
         double error_output = (target - output) * sigmoid_derivative(output);
+        double error_hidden2[HIDDEN2_SIZE];
+        for (int k = 0; k < HIDDEN2_SIZE; ++k) error_hidden2[k] = error_output * weights_hidden2_output[k] * sigmoid_derivative(hidden2[k]);
 
-        double error_hidden[HIDDEN_SIZE];
-        for (int j = 0; j < HIDDEN_SIZE; ++j) {
-          error_hidden[j] = error_output * weights_hidden_output[j] * sigmoid_derivative(hidden[j]);
+        double error_hidden1[HIDDEN1_SIZE];
+        for (int j = 0; j < HIDDEN1_SIZE; ++j) {
+          error_hidden1[j] = 0.0;
+          for (int k = 0; k < HIDDEN2_SIZE; ++k) error_hidden1[j] += error_hidden2[k] * weights_hidden1_hidden2[j][k];
+          error_hidden1[j] *= sigmoid_derivative(hidden1[j]);
         }
 
-        // Update weights dan bias
-        for (int j = 0; j < HIDDEN_SIZE; ++j) {
-          weights_hidden_output[j] += lr * error_output * hidden[j];
-        }
+        // Update weights and biases
+        for (int k = 0; k < HIDDEN2_SIZE; ++k) weights_hidden2_output[k] += lr * error_output * hidden2[k];
         bias_output += lr * error_output;
 
-        for (int i = 0; i < INPUT_SIZE; ++i) {
-          for (int j = 0; j < HIDDEN_SIZE; ++j) {
-            double input = (i == 0) ? x1 : x2;
-            weights_input_hidden[i][j] += lr * error_hidden[j] * input;
-          }
-        }
+        for (int j = 0; j < HIDDEN1_SIZE; ++j)
+          for (int k = 0; k < HIDDEN2_SIZE; ++k) weights_hidden1_hidden2[j][k] += lr * error_hidden2[k] * hidden1[j];
+        for (int k = 0; k < HIDDEN2_SIZE; ++k) bias_hidden2[k] += lr * error_hidden2[k];
 
-        for (int j = 0; j < HIDDEN_SIZE; ++j) {
-          bias_hidden[j] += lr * error_hidden[j];
+        for (int i = 0; i < INPUT_SIZE; ++i) {
+          double input = (i == 0) ? x1 : x2;
+          for (int j = 0; j < HIDDEN1_SIZE; ++j) weights_input_hidden1[i][j] += lr * error_hidden1[j] * input;
         }
+        for (int j = 0; j < HIDDEN1_SIZE; ++j) bias_hidden1[j] += lr * error_hidden1[j];
       }
     }
   }
