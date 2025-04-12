@@ -36,31 +36,30 @@ int main() {
   for (const auto& t : testData) (t.second == 0) ? test0++ : test1++;
   std::cout << "TestCase Label 0: " << test0 << ", Label 1: " << test1 << std::endl;
 
+  int correct = 0;
+  int count   = 1;
+
+  for (const auto& sample : testData) {
+    double output    = model.predict(sample.first[0], sample.first[1]);
+    int    predicted = (output > 0.5) ? 1 : 0;
+
+    std::string predictLabel = (predicted == 0) ? "stance (0)" : "swing (1)";
+    std::string targetLabel  = (sample.second == 0) ? "stance (0)" : "swing (1)";
+
+    std::cout << count << " Input: (" << sample.first[0] << ", " << sample.first[1] << ")  "
+              << "\tTarget: " << targetLabel << "\tPredicted: " << predictLabel << "\tOutput: " << output << std::endl;
+
+    if (predicted == sample.second)
+      correct++;
+    count++;
+  }
+  double accuracy = 100.0 * correct / testData.size();
+
+
   while (true) {
-    int correct = 0;
-    int count   = 1;
-
-    for (const auto& sample : testData) {
-      double output    = model.predict(sample.first[0], sample.first[1]);
-      int    predicted = (output > 0.5) ? 1 : 0;
-
-      std::string predictLabel = (predicted == 0) ? "stance (0)" : "swing (1)";
-      std::string targetLabel  = (sample.second == 0) ? "stance (0)" : "swing (1)";
-
-      std::cout << count << " Input: (" << sample.first[0] << ", " << sample.first[1] << ")  "
-                << "\tTarget: " << targetLabel << "\tPredicted: " << predictLabel << "\tOutput: " << output << std::endl;
-
-      if (predicted == sample.second)
-        correct++;
-      count++;
-    }
-    double accuracy = 100.0 * correct / testData.size();
-
     std::cout << "\nDo you want to see the accuracy? (a): ";
     char choice;
     std::cin >> choice;
-    if (choice == 'q' || choice == 'n')
-      break;
     if (choice == 'a')
       std::cout << "\nAccuracy: " << accuracy << "%" << std::endl;
   }
