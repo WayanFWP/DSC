@@ -36,7 +36,6 @@ int main() {
   for (const auto& t : testData) (t.second == 0) ? test0++ : test1++;
   std::cout << "TestCase Label 0: " << test0 << ", Label 1: " << test1 << std::endl;
 
-  int correct = 0;
   int count   = 1;
 
   for (const auto& sample : testData) {
