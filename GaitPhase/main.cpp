@@ -8,7 +8,7 @@ Dataset dataset;
 Dataset testCase; 
 
 int main() {
-  std::srand(std::time(0));  // Inisialisasi seed untuk random number generator
+  std::srand(std::time(0));  // initiate random seed
 
   if (!dataset.loadFromFile("data/labeled_dataset.txt"))
     return 1;
@@ -29,9 +29,6 @@ int main() {
   if (!testCase.loadFromFile("test/testCase.txt"))
   return 1;
 
-  testCase.duplicateAndAugment(2);
-  testCase.addNoiseToData(0.3);
-
   std::vector<std::pair<std::vector<double>, int>> testData;
   for (const auto& point : testCase.data) testData.push_back({{point.x1, point.x2}, point.label});
 
@@ -39,7 +36,7 @@ int main() {
   for (const auto& t : testData) (t.second == 0) ? test0++ : test1++;
   std::cout << "TestCase Label 0: " << test0 << ", Label 1: " << test1 << std::endl;
 
-  int count = 0;
+  int count = 1;
 
   for (const auto& sample : testData) {
     double output    = model.predict(sample.first[0], sample.first[1]);
