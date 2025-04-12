@@ -16,26 +16,26 @@ int main() {
   // Normalisasi data pelatihan dan simpan parameter min/max
   // dataset.balanceWithSMOTE();
   dataset.normalize();
-  dataset.addNoiseToData(0.01);
   MinMax normParams = dataset.normalize();  // Normalisasi + simpan parameter min/max
-
+  
   std::vector<std::pair<std::vector<double>, int>> training_data;
   for (const auto& point : dataset.data) training_data.push_back({{point.x1, point.x2}, point.label});
-
+  
   int data0 = 0, data1 = 0;
   for (const auto& d : dataset.data) (d.label == 0) ? data0++ : data1++;
 
   std::cout << "DataSet Label 0: " << data0 << ", Label 1: " << data1 << std::endl;
-
+  
   MLP model(0.1);
   std::cout << "Training..." << std::endl;
-  model.train(training_data, 10000, 0.01);  // epoch 3000, learning rate 0.05
+  model.train(training_data, 10000, 0.1);  // epoch 3000, learning rate 0.05
   std::cout << "Training selesai." << std::endl;
-
+  
   if (!testCase.loadFromFile("test/testCase.txt"))
-    return 1;
-
+  return 1;
+  
   testCase.applyNormalization(normParams);  // Terapkan normalisasi yang sama ke test set
+  testCase.addNoiseToData(0.05);
 
   std::vector<std::pair<std::vector<double>, int>> testData;
   for (const auto& point : testCase.data) testData.push_back({{point.x1, point.x2}, point.label});
@@ -54,7 +54,7 @@ int main() {
     std::string targetedLabeles = (sample.second == 0) ? "stance (0)" : "swing (1)";
 
     std::cout << count << " Input: (" << sample.first[0] << ", " << sample.first[1] << ")  "
-              << "\tTarget: " << targetedLabeles << "\tPredicted: " << predictLabeles << "\tConfident: " << output << std::endl;
+              << "\tTarget: " << targetedLabeles << "\tPredicted: " << predictLabeles << "\tOutput: " << output << std::endl;
 
     if (predicted == sample.second)
       correct++;
