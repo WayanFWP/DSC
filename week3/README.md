@@ -1,6 +1,6 @@
 # Multi-Layer Perceptron (MLP) with Error Backpropagation Algorithm (EBPA)
 
-Overview
+## Overview
 
 This project implements a Multi-Layer Perceptron (MLP) using the Error Backpropagation Algorithm (EBPA). The implementation is written in C++ and is designed for character recognition using a dataset of labeled text files.
 
