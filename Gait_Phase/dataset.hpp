@@ -69,7 +69,7 @@ class Dataset {
     else if (heel >= 0.5 && toe > 0.2) return 3;        // mst
     else if (heel < 0.05 && toe > 0.44) return 2;        // ho
     else if (heel < 0.03 && 0.09 <= toe && toe <= 0.6) return 4; // to
-    else return 5;  // default ke sw jika tidak yakin
+    else return 5;  // default sw
 }
 
 

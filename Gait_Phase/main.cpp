@@ -37,10 +37,16 @@ int main() {
   std::vector<std::pair<std::vector<double>, int>> testData;
   for (const auto& point : testCase.data) testData.push_back({{point.x1, point.x2}, point.label});
 
-  int correct = 0, test0 = 0, test1 = 0;
-  for (const auto& t : testData) (t.second == 0) ? test0++ : test1++;
-  std::cout << "TestCase Label 0: " << test0 << ", Label 1: " << test1 << std::endl;
+  int class_counter[6] = {0};
+  for (const auto& d : testCase.data) {
+      if (d.label >= 0 && d.label < 6) class_counter[d.label]++;
+  }
 
+  for (int i = 0; i < 6; ++i) {
+      std::cout << "Label " << i << ": " << class_counter[i] << " data\n";
+  }
+
+  int correct = 0;
   int count = 1;
 
   for (const auto& sample : testData) {
@@ -82,7 +88,7 @@ int main() {
           case 5: label = "Sw"; break;
           default: label = "Unknown"; break;
         }
-        std::cout << label << " (" << output_vector[i] << ") ";
+        std::cout << label << " (" << output_vector[i] * 100 << "%) ";
     }
     std::cout << std::endl;
 

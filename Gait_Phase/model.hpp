@@ -20,13 +20,13 @@ class MLP {
   double weights_hidden1_hidden2[HIDDEN1_SIZE][HIDDEN2_SIZE];
   double bias_hidden2[HIDDEN2_SIZE];
 
-  double weights_hidden2_output[HIDDEN2_SIZE][OUTPUT_SIZE]; // Modified
-  double bias_output[OUTPUT_SIZE]; // Modified
+  double weights_hidden2_output[HIDDEN2_SIZE][OUTPUT_SIZE]; 
+  double bias_output[OUTPUT_SIZE]; 
 
   // Activations
   double hidden1[HIDDEN1_SIZE];
   double hidden2[HIDDEN2_SIZE];
-  double output[OUTPUT_SIZE]; // Modified
+  double output[OUTPUT_SIZE]; 
 
   double sigmoid(double x) { return 1.0 / (1.0 + std::exp(-x)); }
   double sigmoid_derivative(double x) { return x * (1.0 - x); }

@@ -11,15 +11,14 @@
 #include <vector>
 
 struct DataPoint {
-  double x1;
-  double x2;
+  double RR;
+  double QRSd;
   int    label;
 };
 
 class Dataset {
  public:
   std::vector<DataPoint> data;
-
   // Baca file data (x1 x2 label)
   bool loadFromFile(const std::string& path) {
     std::ifstream file(path);
@@ -31,10 +30,10 @@ class Dataset {
     std::string line;
     while (std::getline(file, line)) {
       std::istringstream iss(line);
-      double             x1, x2;
-      if (iss >> x1 >> x2) {
-        int label = (x1 < 0.1 && x2 < 0.1) ? 0 : 1;  // ✅ Auto-label
-        data.push_back({x1, x2, label});
+      double rr, qrsd;
+      if (iss >> rr >> qrsd) {
+        int label = classifyArrhythmia(rr, qrsd);
+        data.push_back({rr, qrsd, label});
       }
     }
 
@@ -42,25 +41,57 @@ class Dataset {
     return true;
   }
 
-  void addNoiseToData(double noise_factor = 0.01) {
-    for (auto& d : data) {
-      d.x1 += (rand() % 2001 - 1000) / 100000.0 * noise_factor;  
-      d.x2 += (rand() % 2001 - 1000) / 100000.0 * noise_factor;  
+  int classifyArrhythmia(double rr, double qrsd) {
+    // Normal: RR 0.6-1.2 ; QRSd 80-100
+    if (rr >= 0.6 && rr <= 1.2 && qrsd >= 80 && qrsd <= 100) {
+      return 0; // Normal
+    }
+    // Region 1: RR < 0.32 (Tachycardia)
+    else if (rr < 0.32) {
+      return 3; // Tachycardia
+    }
+    // Region 2: normal QRSd; 0.32 < RR < 0.60 (R-on-T)
+    else if (rr >= 0.32 && rr < 0.60 && qrsd >= 80 && qrsd <= 100) {
+      return 2; // R-on-T
+    }
+    // Region 3: QRSd > 100; 0.32 < RR < 0.60 (PVC - needs context)
+    else if (rr >= 0.32 && rr < 0.60 && qrsd > 100) {
+      return 6; // PVC (context check needed later)
+    }
+    // Region 4: Normal RR; QRSd > 100 (Fusion)
+    else if (rr >= 0.6 && rr <= 1.2 && qrsd > 100) {
+      return 5; // Fusion
+    }
+    // Region 5: 1.2 < RR < 1.66 (Bradycardia - needs consecutive points)
+    else if (rr > 1.2 && rr <= 1.66) {
+      return 4; // Bradycardia candidate (context check needed later)
+    }
+    // Region 6: RR > 1.66 (Dropped)
+    else if (rr > 1.66) {
+      return 1; // Dropped
     }
   }
 
-  void duplicateAndAugment(int times = 2) {
+  void addNoiseToData(double noise_factor = 0.01) {
+    for (auto& d : data) {
+      d.RR += (rand() % 2001 - 1000) / 100000.0 * noise_factor;
+      d.QRSd += (rand() % 2001 - 1000) / 100000.0 * noise_factor;
+    }
+  }
+
+  void duplicateAndAugment(int label, int times = 2) {
     std::vector<DataPoint> augmented;
     for (const auto& d : data) {
-      for (int i = 0; i < times; ++i) {
-        DataPoint aug = d;
-        aug.x1 += ((rand() % 2001 - 1000) / 1000.0) * 0.01;
-        aug.x2 += ((rand() % 2001 - 1000) / 1000.0) * 0.01;
-        augmented.push_back(aug);
+      if (d.label == label) { // Only duplicate data points with the specified label
+        for (int i = 0; i < times; ++i) {
+          DataPoint aug = d;
+          aug.RR += ((rand() % 2001 - 1000) / 1000.0) * 0.01;
+          aug.QRSd += ((rand() % 2001 - 1000) / 1000.0) * 0.01;
+          augmented.push_back(aug);
+        }
       }
     }
     data.insert(data.end(), augmented.begin(), augmented.end());
   }
 };
-
 #endif
