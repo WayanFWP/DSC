@@ -1,4 +1,5 @@
 #include <iostream>
+#include <map>
 #include <vector>
 
 #include "dataset.hpp"
@@ -17,78 +18,132 @@ int main() {
 
   int class_counts[6] = {0};
   for (const auto& d : dataset.data) {
-      if (d.label >= 0 && d.label < 6) class_counts[d.label]++;
+    if (d.label >= 0 && d.label < 6)
+      class_counts[d.label]++;
   }
 
   for (int i = 0; i < 6; ++i) {
-      std::cout << "Label " << i << ": " << class_counts[i] << " data\n";
+    std::cout << "Label " << i << ": " << class_counts[i] << " data\n";
   }
-  
+
   MLP model;
-  std::cout << "Training..." << std::endl;
-  model.train(training_data, 200, 0.1);  // epoch 500, learning rate 0.1
+
+  // Use fixed parameters for best training
+  int    epochs;
+  double learning_rate;
+  std::cout << "Epochs: ";
+  std::cin >> epochs;
+  std::cout << "lr: ";
+  std::cin >> learning_rate;
+  bool use_augmentation = true;
+
+  std::cout << "Training with epochs=" << epochs << ", learning_rate=" << learning_rate << ", use_augmentation=" << (use_augmentation ? "yes" : "no")
+            << std::endl;
+
+  model.train(training_data,epochs, learning_rate);
   std::cout << "Training section done." << std::endl;
 
   if (!testCase.loadFromFile("test/recall.txt"))
     return 1;
-
-  testCase.addNoiseToData(0.7);  // Add noise to test data
 
   std::vector<std::pair<std::vector<double>, int>> testData;
   for (const auto& point : testCase.data) testData.push_back({{point.x1, point.x2}, point.label});
 
   int class_counter[6] = {0};
   for (const auto& d : testCase.data) {
-      if (d.label >= 0 && d.label < 6) class_counter[d.label]++;
+    if (d.label >= 0 && d.label < 6)
+      class_counter[d.label]++;
   }
 
   for (int i = 0; i < 6; ++i) {
-      std::cout << "Label " << i << ": " << class_counter[i] << " data\n";
+    std::cout << "Label " << i << ": " << class_counter[i] << " data\n";
   }
 
   int correct = 0;
-  int count = 1;
+  int count   = 1;
 
   for (const auto& sample : testData) {
     std::vector<double> output_vector = model.predict(sample.first[0], sample.first[1]);
-    int predicted = std::distance(output_vector.begin(), std::max_element(output_vector.begin(), output_vector.end()));
+    int                 predicted     = std::distance(output_vector.begin(), std::max_element(output_vector.begin(), output_vector.end()));
 
     std::string predictLabel;
     switch (predicted) {
-      case 0: predictLabel = "IC"; break;
-      case 1: predictLabel = "FF"; break;
-      case 2: predictLabel = "HO"; break;
-      case 3: predictLabel = "MSt"; break;
-      case 4: predictLabel = "TO"; break;
-      case 5: predictLabel = "Sw"; break;
-      default: predictLabel = "Unknown"; break;
+    case 0:
+      predictLabel = "IC";
+      break;
+    case 1:
+      predictLabel = "FF";
+      break;
+    case 2:
+      predictLabel = "HO";
+      break;
+    case 3:
+      predictLabel = "MSt";
+      break;
+    case 4:
+      predictLabel = "TO";
+      break;
+    case 5:
+      predictLabel = "Sw";
+      break;
+    default:
+      predictLabel = "Unknown";
+      break;
     }
 
     std::string targetLabel;
     switch (sample.second) {
-      case 0: targetLabel = "IC"; break;
-      case 1: targetLabel = "FF"; break;
-      case 2: targetLabel = "HO"; break;
-      case 3: targetLabel = "MSt"; break;
-      case 4: targetLabel = "TO"; break;
-      case 5: targetLabel = "Sw"; break;
-      default: targetLabel = "Unknown"; break;
+    case 0:
+      targetLabel = "IC";
+      break;
+    case 1:
+      targetLabel = "FF";
+      break;
+    case 2:
+      targetLabel = "HO";
+      break;
+    case 3:
+      targetLabel = "MSt";
+      break;
+    case 4:
+      targetLabel = "TO";
+      break;
+    case 5:
+      targetLabel = "Sw";
+      break;
+    default:
+      targetLabel = "Unknown";
+      break;
     }
 
     std::cout << count << " Input: (" << sample.first[0] << ", " << sample.first[1] << ")  "
               << "\n|>=============================> Target: " << targetLabel << "\tPredicted: " << predictLabel << "\tOutput: ";
     for (size_t i = 0; i < output_vector.size(); ++i) {
-        std::string label;
-        switch (i) {
-          case 0: label = "IC"; break;
-          case 1: label = "FF"; break;
-          case 2: label = "HO"; break;
-          case 3: label = "MSt"; break;
-          case 4: label = "TO"; break;
-          case 5: label = "Sw"; break;
-          default: label = "Unknown"; break;
-        }
-        std::cout << label << " (" << output_vector[i] * 100 << "%) ";
+      std::string label;
+      switch (i) {
+      case 0:
+        label = "IC";
+        break;
+      case 1:
+        label = "FF";
+        break;
+      case 2:
+        label = "HO";
+        break;
+      case 3:
+        label = "MSt";
+        break;
+      case 4:
+        label = "TO";
+        break;
+      case 5:
+        label = "Sw";
+        break;
+      default:
+        label = "Unknown";
+        break;
+      }
+      std::cout << label << " (" << output_vector[i] * 100 << "%) ";
     }
     std::cout << std::endl;
 
@@ -97,16 +152,6 @@ int main() {
     count++;
   }
   double accuracy = 100.0 * correct / testData.size();
-
-  while (true) {
-    std::cout << "\nDo you want to see the accuracy? (a): ";
-    char choice;
-    std::cin >> choice;
-    if (choice == 'a')
-      std::cout << "\nAccuracy: " << accuracy << "%" << std::endl;
-    else
-      break;
-  }
-
+  std::cout << "\nAccuracy: " << accuracy << "%" << std::endl;
   return 0;
 }

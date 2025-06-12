@@ -1,0 +1,323 @@
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <random>
+#include <algorithm>
+#include <iomanip>
+
+class NeuralNetwork {
+private:
+    // Network configuration
+    int input_size;
+    int hidden1_size;
+    int hidden2_size;
+    int output_size;
+
+    // Parameters
+    std::vector<std::vector<double>> W1, W2, W3;
+    std::vector<double> b1, b2, b3;
+    
+    // Adam optimizer states
+    std::vector<std::vector<double>> mW1, vW1, mW2, vW2, mW3, vW3;
+    std::vector<double> mb1, vb1, mb2, vb2, mb3, vb3;
+    double lr;
+    double beta1;
+    double beta2;
+    double epsilon;
+    int timestep;
+
+    // Activation functions
+    double sigmoid(double x) {
+        return 1.0 / (1.0 + std::exp(-x));
+    }
+    
+    double sigmoid_derivative(double x) {
+        double s = sigmoid(x);
+        return s * (1 - s);
+    }
+
+public:
+    NeuralNetwork(int input, int h1, int h2, int output, 
+                 double learning_rate = 0.01, 
+                 double b1 = 0.9, double b2 = 0.999, double eps = 1e-8)
+        : input_size(input), hidden1_size(h1), hidden2_size(h2), output_size(output),
+          lr(learning_rate), beta1(b1), beta2(b2), epsilon(eps), timestep(0) {
+        
+        // Initialize weights and biases
+        initialize_weights();
+    }
+
+    void initialize_weights() {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_real_distribution<double> dist(-0.5, 0.5);
+        
+        // Initialize weights and biases
+        W1 = std::vector<std::vector<double>>(hidden1_size, std::vector<double>(input_size));
+        b1 = std::vector<double>(hidden1_size, 0.0);
+        for (int i = 0; i < hidden1_size; ++i) {
+            for (int j = 0; j < input_size; ++j) {
+                W1[i][j] = dist(gen);
+            }
+        }
+        
+        W2 = std::vector<std::vector<double>>(hidden2_size, std::vector<double>(hidden1_size));
+        b2 = std::vector<double>(hidden2_size, 0.0);
+        for (int i = 0; i < hidden2_size; ++i) {
+            for (int j = 0; j < hidden1_size; ++j) {
+                W2[i][j] = dist(gen);
+            }
+        }
+        
+        W3 = std::vector<std::vector<double>>(output_size, std::vector<double>(hidden2_size));
+        b3 = std::vector<double>(output_size, 0.0);
+        for (int i = 0; i < output_size; ++i) {
+            for (int j = 0; j < hidden2_size; ++j) {
+                W3[i][j] = dist(gen);
+            }
+        }
+        
+        // Initialize Adam states
+        mW1 = std::vector<std::vector<double>>(hidden1_size, std::vector<double>(input_size, 0.0));
+        vW1 = std::vector<std::vector<double>>(hidden1_size, std::vector<double>(input_size, 0.0));
+        mb1 = std::vector<double>(hidden1_size, 0.0);
+        vb1 = std::vector<double>(hidden1_size, 0.0);
+        
+        mW2 = std::vector<std::vector<double>>(hidden2_size, std::vector<double>(hidden1_size, 0.0));
+        vW2 = std::vector<std::vector<double>>(hidden2_size, std::vector<double>(hidden1_size, 0.0));
+        mb2 = std::vector<double>(hidden2_size, 0.0);
+        vb2 = std::vector<double>(hidden2_size, 0.0);
+        
+        mW3 = std::vector<std::vector<double>>(output_size, std::vector<double>(hidden2_size, 0.0));
+        vW3 = std::vector<std::vector<double>>(output_size, std::vector<double>(hidden2_size, 0.0));
+        mb3 = std::vector<double>(output_size, 0.0);
+        vb3 = std::vector<double>(output_size, 0.0);
+    }
+
+    std::vector<double> forward(const std::vector<double>& input) {
+        // Hidden layer 1
+        std::vector<double> h1(hidden1_size);
+        for (int i = 0; i < hidden1_size; ++i) {
+            double z = b1[i];
+            for (int j = 0; j < input_size; ++j) {
+                z += W1[i][j] * input[j];
+            }
+            h1[i] = sigmoid(z);
+        }
+        
+        // Hidden layer 2
+        std::vector<double> h2(hidden2_size);
+        for (int i = 0; i < hidden2_size; ++i) {
+            double z = b2[i];
+            for (int j = 0; j < hidden1_size; ++j) {
+                z += W2[i][j] * h1[j];
+            }
+            h2[i] = sigmoid(z);
+        }
+        
+        // Output layer (linear activation)
+        std::vector<double> output(output_size);
+        for (int i = 0; i < output_size; ++i) {
+            double z = b3[i];
+            for (int j = 0; j < hidden2_size; ++j) {
+                z += W3[i][j] * h2[j];
+            }
+            output[i] = z;
+        }
+        
+        return output;
+    }
+
+    void train(const std::vector<double>& input, const std::vector<double>& target) {
+        // Forward pass
+        std::vector<double> h1(hidden1_size);
+        for (int i = 0; i < hidden1_size; ++i) {
+            double z = b1[i];
+            for (int j = 0; j < input_size; ++j) {
+                z += W1[i][j] * input[j];
+            }
+            h1[i] = sigmoid(z);
+        }
+        
+        std::vector<double> h2(hidden2_size);
+        for (int i = 0; i < hidden2_size; ++i) {
+            double z = b2[i];
+            for (int j = 0; j < hidden1_size; ++j) {
+                z += W2[i][j] * h1[j];
+            }
+            h2[i] = sigmoid(z);
+        }
+        
+        std::vector<double> output(output_size);
+        for (int i = 0; i < output_size; ++i) {
+            double z = b3[i];
+            for (int j = 0; j < hidden2_size; ++j) {
+                z += W3[i][j] * h2[j];
+            }
+            output[i] = z;
+        }
+        
+        // Backward pass
+        std::vector<double> d_output(output_size);
+        for (int i = 0; i < output_size; ++i) {
+            d_output[i] = output[i] - target[i];  // MSE derivative
+        }
+        
+        // Output layer gradients
+        std::vector<std::vector<double>> dW3(output_size, std::vector<double>(hidden2_size, 0.0));
+        std::vector<double> db3(output_size, 0.0);
+        for (int i = 0; i < output_size; ++i) {
+            for (int j = 0; j < hidden2_size; ++j) {
+                dW3[i][j] = d_output[i] * h2[j];
+            }
+            db3[i] = d_output[i];
+        }
+        
+        // Hidden layer 2 gradients
+        std::vector<double> d_h2(hidden2_size, 0.0);
+        for (int j = 0; j < hidden2_size; ++j) {
+            double error = 0.0;
+            for (int i = 0; i < output_size; ++i) {
+                error += W3[i][j] * d_output[i];
+            }
+            d_h2[j] = error * sigmoid_derivative(h2[j]);
+        }
+        
+        std::vector<std::vector<double>> dW2(hidden2_size, std::vector<double>(hidden1_size, 0.0));
+        std::vector<double> db2(hidden2_size, 0.0);
+        for (int i = 0; i < hidden2_size; ++i) {
+            for (int j = 0; j < hidden1_size; ++j) {
+                dW2[i][j] = d_h2[i] * h1[j];
+            }
+            db2[i] = d_h2[i];
+        }
+        
+        // Hidden layer 1 gradients
+        std::vector<double> d_h1(hidden1_size, 0.0);
+        for (int j = 0; j < hidden1_size; ++j) {
+            double error = 0.0;
+            for (int i = 0; i < hidden2_size; ++i) {
+                error += W2[i][j] * d_h2[i];
+            }
+            d_h1[j] = error * sigmoid_derivative(h1[j]);
+        }
+        
+        std::vector<std::vector<double>> dW1(hidden1_size, std::vector<double>(input_size, 0.0));
+        std::vector<double> db1(hidden1_size, 0.0);
+        for (int i = 0; i < hidden1_size; ++i) {
+            for (int j = 0; j < input_size; ++j) {
+                dW1[i][j] = d_h1[i] * input[j];
+            }
+            db1[i] = d_h1[i];
+        }
+        
+        // Update Adam parameters
+        timestep++;
+        update_parameters(dW1, db1, dW2, db2, dW3, db3);
+    }
+
+    void update_parameters(const std::vector<std::vector<double>>& dW1,
+                          const std::vector<double>& db1,
+                          const std::vector<std::vector<double>>& dW2,
+                          const std::vector<double>& db2,
+                          const std::vector<std::vector<double>>& dW3,
+                          const std::vector<double>& db3) {
+        // Update weights and biases using Adam optimizer
+        for (int i = 0; i < hidden1_size; ++i) {
+            for (int j = 0; j < input_size; ++j) {
+                mW1[i][j] = beta1 * mW1[i][j] + (1 - beta1) * dW1[i][j];
+                vW1[i][j] = beta2 * vW1[i][j] + (1 - beta2) * dW1[i][j] * dW1[i][j];
+                double m_hat = mW1[i][j] / (1 - std::pow(beta1, timestep));
+                double v_hat = vW1[i][j] / (1 - std::pow(beta2, timestep));
+                W1[i][j] -= lr * m_hat / (std::sqrt(v_hat) + epsilon);
+            }
+            
+            mb1[i] = beta1 * mb1[i] + (1 - beta1) * db1[i];
+            vb1[i] = beta2 * vb1[i] + (1 - beta2) * db1[i] * db1[i];
+            double m_hat = mb1[i] / (1 - std::pow(beta1, timestep));
+            double v_hat = vb1[i] / (1 - std::pow(beta2, timestep));
+            b1[i] -= lr * m_hat / (std::sqrt(v_hat) + epsilon);
+        }
+        
+        for (int i = 0; i < hidden2_size; ++i) {
+            for (int j = 0; j < hidden1_size; ++j) {
+                mW2[i][j] = beta1 * mW2[i][j] + (1 - beta1) * dW2[i][j];
+                vW2[i][j] = beta2 * vW2[i][j] + (1 - beta2) * dW2[i][j] * dW2[i][j];
+                double m_hat = mW2[i][j] / (1 - std::pow(beta1, timestep));
+                double v_hat = vW2[i][j] / (1 - std::pow(beta2, timestep));
+                W2[i][j] -= lr * m_hat / (std::sqrt(v_hat) + epsilon);
+            }
+            
+            mb2[i] = beta1 * mb2[i] + (1 - beta1) * db2[i];
+            vb2[i] = beta2 * vb2[i] + (1 - beta2) * db2[i] * db2[i];
+            double m_hat = mb2[i] / (1 - std::pow(beta1, timestep));
+            double v_hat = vb2[i] / (1 - std::pow(beta2, timestep));
+            b2[i] -= lr * m_hat / (std::sqrt(v_hat) + epsilon);
+        }
+        
+        for (int i = 0; i < output_size; ++i) {
+            for (int j = 0; j < hidden2_size; ++j) {
+                mW3[i][j] = beta1 * mW3[i][j] + (1 - beta1) * dW3[i][j];
+                vW3[i][j] = beta2 * vW3[i][j] + (1 - beta2) * dW3[i][j] * dW3[i][j];
+                double m_hat = mW3[i][j] / (1 - std::pow(beta1, timestep));
+                double v_hat = vW3[i][j] / (1 - std::pow(beta2, timestep));
+                W3[i][j] -= lr * m_hat / (std::sqrt(v_hat) + epsilon);
+            }
+            
+            mb3[i] = beta1 * mb3[i] + (1 - beta1) * db3[i];
+            vb3[i] = beta2 * vb3[i] + (1 - beta2) * db3[i] * db3[i];
+            double m_hat = mb3[i] / (1 - std::pow(beta1, timestep));
+            double v_hat = vb3[i] / (1 - std::pow(beta2, timestep));
+            b3[i] -= lr * m_hat / (std::sqrt(v_hat) + epsilon);
+        }
+    }
+
+    double calculate_mse(const std::vector<double>& output, const std::vector<double>& target) {
+        double mse = 0.0;
+        for (size_t i = 0; i < output.size(); ++i) {
+            double error = output[i] - target[i];
+            mse += error * error;
+        }
+        return mse / (2.0 * output.size());  // MSE with 1/2 factor
+    }
+};
+
+int main() {
+    // Example usage
+    const int INPUT_SIZE = 4;
+    const int HIDDEN1_SIZE = 5;
+    const int HIDDEN2_SIZE = 4;
+    const int OUTPUT_SIZE = 6;  // 6 labels
+
+    NeuralNetwork nn(INPUT_SIZE, HIDDEN1_SIZE, HIDDEN2_SIZE, OUTPUT_SIZE);
+
+    // Sample input and target (one-hot encoded)
+    std::vector<double> input = {0.5, -0.2, 0.3, 0.1};
+    std::vector<double> target = {0, 1, 0, 0, 0, 0};  // Label 1
+
+    // Training loop
+    for (int epoch = 0; epoch < 1000; ++epoch) {
+        std::vector<double> output = nn.forward(input);
+        nn.train(input, target);
+        
+        if (epoch % 100 == 0) {
+            double mse = nn.calculate_mse(output, target);
+            std::cout << "Epoch " << std::setw(4) << epoch 
+                      << " | MSE: " << std::fixed << std::setprecision(5) << mse
+                      << " | Output: ";
+            for (double val : output) {
+                std::cout << std::setw(8) << std::fixed << std::setprecision(4) << val;
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    // Final prediction
+    std::vector<double> final_output = nn.forward(input);
+    std::cout << "\nFinal prediction: ";
+    for (double val : final_output) {
+        std::cout << val << " ";
+    }
+    
+    return 0;
+}
