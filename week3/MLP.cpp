@@ -86,10 +86,10 @@ int main() {
       predict_user_input(mlp);
       break;
     case 1:
-    test_files(mlp);
+      test_files(mlp);
     default:
       cout << "Invalid choice! Please enter 1 or 2." << endl;
-    break;
+      break;
     }
   }
 

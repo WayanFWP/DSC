@@ -1,0 +1,27 @@
+{
+    "configurations": [
+        {
+            "browse": {
+                "databaseFilename": "${default}",
+                "limitSymbolsToIncludedHeaders": false
+            },
+            "includePath": [
+                "/usr/include/**",
+                "/usr/include/eigen3/**",
+                "/usr/local/include/**",
+                "/opt/ros/noetic/include/**",
+                "${workspaceFolder}/src/communication_manager/include/communication_manager/**",
+                "${workspaceFolder}/src/config_parser/include/**",
+                "${workspaceFolder}/devel/include/**",
+                "${workspaceFolder}/src/hexapod_locomotion/include",
+                "${workspaceFolder}/src/communication_manager/include"
+            ],
+            "name": "Linux",
+            "compilerPath": "/usr/bin/g++",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "linux-gcc-x64"
+        }
+    ],
+    "version": 4
+}
