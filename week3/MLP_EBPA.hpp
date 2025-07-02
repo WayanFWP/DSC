@@ -6,34 +6,21 @@
 #include <iostream>
 #include <random>
 #include <vector>
+#include <iomanip>
 
 #include "dataset.hpp"
 
 using namespace std;
 namespace fs = filesystem;
 
-/**
- * @class MLP
- * @brief Implements a Multi-layer Perceptron (MLP) with one hidden layer.
- *
- * This class provides a simple neural network with:
- * - Randomized initialization of weights and biases in the range [-1.0, 1.0].
- * - Forward propagation using the sigmoid activation function.
- * - Backward propagation (backpropagation) using the derivative of the sigmoid function to update weights and biases.
- * - Training over multiple epochs with reporting of the average error per epoch.
- * - Prediction by selecting the output neuron with the highest activation.
- */
+struct Prediction{
+  int predicted_label;
+  double confidence;
+  double error;
+  double max_probability;
+  vector<double> all_probabilities;
+};
 
-/**
- * @brief Constructs an MLP with the specified number of input, hidden, and output neurons.
- *
- * During construction, the network's weights and biases are initialized to random values from a uniform distribution ranging from -1.0 to 1.0.
- *
- * @param input  The number of neurons in the input layer.
- * @param hidden The number of neurons in the hidden layer.
- * @param output The number of neurons in the output layer.
- * @param lr     The learning rate for training (default value is 0.1).
- */
 class MLP {
  private:
   int                    input_size, hidden_size, output_size;
@@ -179,6 +166,20 @@ class MLP {
     vector<double> result = forward(input);
     return distance(result.begin(), max_element(result.begin(), result.end()));
   }
+
+  Prediction validation(const vector<double>& input){
+    vector<double> result = forward(input);
+    Prediction prediction;
+
+    auto max_it = max_element(result.begin(), result.end());
+    prediction.predicted_label = distance(result.begin(), max_it);
+    prediction.max_probability = *max_it;
+    prediction.all_probabilities = result;
+
+    prediction.confidence = prediction.max_probability * 100; // Convert to percentage
+    prediction.error = 1 - prediction.max_probability; // Error is the complement of the max probability
+    return prediction;
+  }
 };
 
 // Function to load a 12x12 matrix from user input
@@ -221,19 +222,52 @@ void test_files(MLP& mlp) {
     string test_filename = entry.path().filename().string();
     cout << "📂 Testing file: " << test_filename << endl;
 
-    vector<vector<double>> test_matrix     = load_test_matrix(test_filename);
-    int                    predicted_label = mlp.predict(flatten(test_matrix));
+    vector<vector<double>> test_matrix = load_test_matrix(test_filename);
+    auto prediction_result = mlp.validation(flatten(test_matrix));
 
-    cout << "✅ Predicted Letter: " << char('A' + predicted_label) << "\n" << endl;
+    cout << "✅ Predicted Letter: " << char('A' + prediction_result.predicted_label) << endl;
+    cout << "📊 Confidence: " << fixed << setprecision(2) << prediction_result.confidence << "%" << endl;
+    cout << "⚠️  Detection Error: " << fixed << setprecision(4) << prediction_result.error << endl;
+    cout << "🎯 Max Probability: " << fixed << setprecision(4) << prediction_result.max_probability << endl;
+    
+    // Show all class probabilities
+    cout << "📈 All Class Probabilities:" << endl;
+    for (int i = 0; i < prediction_result.all_probabilities.size(); ++i) {
+      cout << "   " << char('A' + i) << ": " << fixed << setprecision(4) 
+           << prediction_result.all_probabilities[i] << endl;
+    }
+    cout << endl;
   }
 }
+
 // Function to predict user-inputted matrix
 void predict_user_input(MLP& mlp) {
   cout << "Enter your own 12x12 matrix to predict: " << endl;
   vector<vector<double>> user_matrix = get_user_matrix();
 
-  int predicted_label = mlp.predict(flatten(user_matrix));
-  cout << "🎯 Predicted Letter: " << char('A' + predicted_label) << endl;
+  auto prediction_result = mlp.validation(flatten(user_matrix));
+  
+  cout << "🎯 Predicted Letter: " << char('A' + prediction_result.predicted_label) << endl;
+  cout << "📊 Confidence: " << fixed << setprecision(2) << prediction_result.confidence << "%" << endl;
+  cout << "⚠️  Detection Error: " << fixed << setprecision(4) << prediction_result.error << endl;
+  cout << "🎯 Max Probability: " << fixed << setprecision(4) << prediction_result.max_probability << endl;
+  
+  // Show confidence level interpretation
+  if (prediction_result.confidence >= 90) {
+    cout << "🟢 High Confidence - Very reliable prediction!" << endl;
+  } else if (prediction_result.confidence >= 70) {
+    cout << "🟡 Medium Confidence - Fairly reliable prediction." << endl;
+  } else if (prediction_result.confidence >= 50) {
+    cout << "🟠 Low Confidence - Prediction may be uncertain." << endl;
+  } else {
+    cout << "🔴 Very Low Confidence - Prediction is highly uncertain!" << endl;
+  }
+  
+  cout << "📈 All Class Probabilities:" << endl;
+  for (int i = 0; i < prediction_result.all_probabilities.size(); ++i) {
+    cout << "   " << char('A' + i) << ": " << fixed << setprecision(4) 
+         << prediction_result.all_probabilities[i] << endl;
+  }
 }
 
 #endif  // MLP_EBPA_HPP
