@@ -217,7 +217,7 @@ void display_dataset(const vector<vector<vector<double>>>& letters) {
 // Function to test all files in "testcase/" directory
 void test_files(MLP& mlp) {
   cout << "\n🔍 Loading test matrices from 'testcase/' folder...\n";
-  for (const auto& entry : fs::directory_iterator("test")) {
+  for (const auto& entry : fs::directory_iterator("testcase")) {
     string test_filename = entry.path().filename().string();
     cout << "📂 Testing file: " << test_filename << endl;
 
@@ -227,7 +227,6 @@ void test_files(MLP& mlp) {
     cout << "✅ Predicted Letter: " << char('A' + predicted_label) << "\n" << endl;
   }
 }
-
 // Function to predict user-inputted matrix
 void predict_user_input(MLP& mlp) {
   cout << "Enter your own 12x12 matrix to predict: " << endl;
