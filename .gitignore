@@ -18,3 +18,8 @@ cmake_install.cmake
 # Ignore IDE specific files
 Final_Project/Aritmia_classify/.gitignore
 Final_Project/Gait_Phase/.gitignore
+
+# Ignore temporary files
+week1/as
+week3/as
+week6/as
