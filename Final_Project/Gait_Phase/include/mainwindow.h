@@ -38,7 +38,7 @@ class MainWindow : public QMainWindow {
  private:
   Ui::MainWindow *ui;
 
-  int    maxEpochs    = 2000;
+  int    maxEpochs    = 100000;
   double learningRate = 1e-2;
   double decay        = 0.95;
 };

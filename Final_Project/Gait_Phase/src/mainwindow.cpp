@@ -121,7 +121,7 @@ void MainWindow::on_trainButton_clicked() {
   }
 
   // Augment the dataset to balance classes
-  augmented.duplicateAndAugment(3);  // Use a factor of x for all data
+  // augmented.duplicateAndAugment(3);  // Use a factor of x for all data
 
   // Convert the augmented Dataset to the format expected by the model
   for (auto &point : augmented.data) {

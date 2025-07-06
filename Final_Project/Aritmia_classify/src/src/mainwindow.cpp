@@ -113,7 +113,18 @@ void MainWindow::on_Train_clicked()
         return;
     }
 
-    model = std::make_unique<Model>(2, hiddenNeurons, 7, 0.1);
+    // --- Initialize model ---
+    hiddenNeurons = std::max(hiddenNeurons, 2); // Ensure at least 2 hidden neurons
+    int hidden2 = hiddenNeurons / 2; // Example: half of hiddenNeurons
+    hidden2 = std::max(hidden2, 2); // Ensure at least 2 hidden neurons
+
+    int hidden3 = hidden2 / 2; // Example: quarter of hiddenNeurons
+    hidden3 = std::max(hidden3, 2); // Ensure at least 2 hidden neurons
+    
+    int hidden4 = hidden3 / 2; // Example: half of hiddenNeurons
+    hidden4 = std::max(hidden4, 2); // Ensure at least 2 hidden neurons
+    
+    model = std::make_unique<Model>(2, hiddenNeurons, hidden2, hidden3 , hidden4 , 7, 0.1);
 
     logMessage("Training started with " + QString::number(hiddenNeurons) + " hidden neurons.");
 
@@ -123,6 +134,7 @@ void MainWindow::on_Train_clicked()
     // --- Train model ---
     // Normalize data
     model->normalizeTrain(xData, rrMin, rrMax, qrsMin, qrsMax);
+
     model->train(xData, yData, 500);
 
     // --- Plot MSE ---

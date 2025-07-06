@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.16)
 
 project(Aritmia_classify VERSION 0.1 LANGUAGES CXX)
 
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native -funroll-loops")
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)

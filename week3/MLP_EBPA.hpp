@@ -60,19 +60,8 @@ class MLP {
 
     for (int i = 0; i < output_size; ++i) bias_o[i] = dist(gen);
   }
-
-  /**
-   * @brief Computes the forward propagation of the neural network.
-   *
-   * This function performs a forward pass through the neural network by first computing the
-   * activations of the hidden layer using the input vector, weights, and biases, and then
-   * applying the sigmoid activation function. It proceeds to compute the output layer in a
-   * similar fashion by using the hidden layer activations, corresponding weights, and biases,
-   * followed by the sigmoid activation.
-   *
-   * @param input A constant reference to a vector of doubles representing the input features.
-   * @return A vector of doubles representing the activated outputs from the network.
-   */
+  
+  // Forward pass to compute output
   vector<double> forward(const vector<double>& input) {
     for (int i = 0; i < hidden_size; ++i) {
       hidden[i] = bias_h[i];
@@ -87,20 +76,7 @@ class MLP {
     }
     return output;
   }
-
-  /**
-   * @brief Performs backward propagation to update the neural network's weights and biases.
-   *
-   * This function calculates the error and corresponding deltas for both the output and 
-   * hidden layers by comparing the target outputs with the actual outputs computed 
-   * during the forward pass. It applies the derivative of the sigmoid function 
-   * to adjust the deltas and then updates the weights connecting the hidden and 
-   * output layers as well as the weights connecting the input and hidden layers. 
-   * Additionally, it updates the bias values for the hidden and output layers.
-   *
-   * @param input  The input vector that was provided during the network's forward pass.
-   * @param target The expected output vector used to compute the output error.
-   */
+  // Backward pass to update weights and biases
   void backward(const vector<double>& input, const vector<double>& target) {
     vector<double> output_error(output_size), output_delta(output_size);
     vector<double> hidden_error(hidden_size), hidden_delta(hidden_size);
@@ -127,17 +103,7 @@ class MLP {
     for (int i = 0; i < hidden_size; ++i) bias_h[i] += learning_rate * hidden_delta[i];
   }
 
-  /**
-   * @brief Trains the neural network using the provided inputs and targets over a given number of epochs.
-   *
-   * For each epoch, this function iterates through all training examples, performs a forward pass,
-   * computes the error with a backward pass, and aggregates the total error across all outputs.
-   * The average error for each epoch is then printed to the console.
-   *
-   * @param inputs A vector of vectors containing the input data for each training example.
-   * @param targets A vector of vectors containing the expected output data for each training example.
-   * @param epochs The number of times to iterate over the entire training dataset.
-   */
+  // Function to train the MLP model
   void train(const vector<vector<double>>& inputs, const vector<vector<double>>& targets, int epochs) {
     for (int e = 0; e < epochs; ++e) {
       double total_error = 0;
@@ -151,22 +117,11 @@ class MLP {
     }
   }
 
-  /**
-   * Computes the predicted class index from the provided input features.
-   *
-   * This function performs a forward pass through the network using the given input,
-   * then finds the index of the maximum element in the resulting output vector to 
-   * determine the predicted class.
-   *
-   * @param input A constant reference to a vector of doubles that represents 
-   *              the input features for the prediction.
-   * @return An integer indicating the index of the predicted class.
-   */
   int predict(const vector<double>& input) {
     vector<double> result = forward(input);
     return distance(result.begin(), max_element(result.begin(), result.end()));
   }
-
+  // Function to validate the prediction and return detailed results
   Prediction validation(const vector<double>& input){
     vector<double> result = forward(input);
     Prediction prediction;

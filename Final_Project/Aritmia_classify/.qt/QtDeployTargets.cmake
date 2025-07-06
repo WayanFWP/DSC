@@ -1,0 +1,2 @@
+set(__QT_DEPLOY_TARGET_Aritmia_classify_FILE /home/nayaw/Documents/DSC/git-main/Final_Project/Aritmia_classify/Aritmia_classify)
+set(__QT_DEPLOY_TARGET_Aritmia_classify_TYPE EXECUTABLE)

@@ -19,7 +19,9 @@ class MLP {
   std::vector<double> accuracy_history;
 
   static const int INPUT_SIZE   = 2;
-  static const int HIDDEN_SIZE  = 8;  // Single hidden layer like Aritmia
+  static const int HIDDEN1_SIZE  = 16;  // Single hidden layer like Aritmia
+  static const int HIDDEN2_SIZE  = 12;  // Single hidden layer like Aritmia
+  static const int HIDDEN3_SIZE  = 8;  // Single hidden layer like Aritmia
   static const int OUTPUT_SIZE  = 6;
 
   // Simplified architecture like Aritmia model
@@ -27,6 +29,8 @@ class MLP {
   std::vector<double>              b1;     // [HIDDEN_SIZE]
   std::vector<std::vector<double>> W2;     // [OUTPUT_SIZE][HIDDEN_SIZE]
   std::vector<double>              b2;     // [OUTPUT_SIZE]
+  std::vector<std::vector<double>> W3, W4;     // [OUTPUT_SIZE][HIDDEN_SIZE]
+  std::vector<double>              b3, b4;     // [OUTPUT_SIZE]
 
   double learning_rate;
 

@@ -85,7 +85,7 @@ class Dataset {
     }
   }
 
-  void duplicateAndAugment(int times = 2) {
+  void duplicateAndAugment(int times = 3) {
     std::vector<DataPoint> augmented;
     for (const auto& d : data) {
       for (int i = 0; i < times; ++i) {

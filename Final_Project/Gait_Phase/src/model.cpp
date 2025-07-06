@@ -3,30 +3,54 @@
 MLP::MLP(double lr) : learning_rate(lr) {
   std::srand(std::time(0));
 
-  // Initialize weights and biases with Xavier initialization
-  W1 = std::vector<std::vector<double>>(HIDDEN_SIZE, std::vector<double>(INPUT_SIZE));
-  b1 = std::vector<double>(HIDDEN_SIZE, 0.0);
-  W2 = std::vector<std::vector<double>>(OUTPUT_SIZE, std::vector<double>(HIDDEN_SIZE));
-  b2 = std::vector<double>(OUTPUT_SIZE, 0.0);
+  // Initialize weights and biases for 3 hidden layers
+  W1 = std::vector<std::vector<double>>(HIDDEN1_SIZE, std::vector<double>(INPUT_SIZE));
+  b1 = std::vector<double>(HIDDEN1_SIZE, 0.0);
+  W2 = std::vector<std::vector<double>>(HIDDEN2_SIZE, std::vector<double>(HIDDEN1_SIZE));
+  b2 = std::vector<double>(HIDDEN2_SIZE, 0.0);
+  W3 = std::vector<std::vector<double>>(HIDDEN3_SIZE, std::vector<double>(HIDDEN2_SIZE));
+  b3 = std::vector<double>(HIDDEN3_SIZE, 0.0);
+  W4 = std::vector<std::vector<double>>(OUTPUT_SIZE, std::vector<double>(HIDDEN3_SIZE));
+  b4 = std::vector<double>(OUTPUT_SIZE, 0.0);
 
-  // Xavier initialization for better convergence
+  // Xavier initialization for each layer
   double std_w1 = sqrt(2.0 / INPUT_SIZE);
-  double std_w2 = sqrt(2.0 / HIDDEN_SIZE);
+  double std_w2 = sqrt(2.0 / HIDDEN1_SIZE);
+  double std_w3 = sqrt(2.0 / HIDDEN2_SIZE);
+  double std_w4 = sqrt(2.0 / HIDDEN3_SIZE);
 
   std::random_device               rd;
   std::mt19937                     gen(rd());
   std::normal_distribution<double> dist1(0.0, std_w1);
   std::normal_distribution<double> dist2(0.0, std_w2);
+  std::normal_distribution<double> dist3(0.0, std_w3);
+  std::normal_distribution<double> dist4(0.0, std_w4);
 
+  // Initialize W1
   for (auto& row : W1) {
     for (auto& val : row) {
       val = dist1(gen);
     }
   }
 
+  // Initialize W2
   for (auto& row : W2) {
     for (auto& val : row) {
       val = dist2(gen);
+    }
+  }
+
+  // Initialize W3
+  for (auto& row : W3) {
+    for (auto& val : row) {
+      val = dist3(gen);
+    }
+  }
+
+  // Initialize W4
+  for (auto& row : W4) {
+    for (auto& val : row) {
+      val = dist4(gen);
     }
   }
 }
@@ -116,19 +140,36 @@ void MLP::normalizeTrainingData(std::vector<std::vector<double>>& X) {
 }
 
 std::vector<double> MLP::predictProb(const std::vector<double>& input) {
-  // Forward pass
-  std::vector<double> z1(HIDDEN_SIZE), a1(HIDDEN_SIZE);
-  for (int h = 0; h < HIDDEN_SIZE; ++h) {
+  // Forward pass through 3 hidden layers
+  
+  // Hidden layer 1
+  std::vector<double> z1(HIDDEN1_SIZE), a1(HIDDEN1_SIZE);
+  for (int h = 0; h < HIDDEN1_SIZE; ++h) {
     z1[h] = dot(W1[h], input) + b1[h];
     a1[h] = sigmoid(z1[h]);
   }
 
-  std::vector<double> z2(OUTPUT_SIZE);
-  for (int o = 0; o < OUTPUT_SIZE; ++o) {
-    z2[o] = dot(W2[o], a1) + b2[o];
+  // Hidden layer 2
+  std::vector<double> z2(HIDDEN2_SIZE), a2(HIDDEN2_SIZE);
+  for (int h = 0; h < HIDDEN2_SIZE; ++h) {
+    z2[h] = dot(W2[h], a1) + b2[h];
+    a2[h] = sigmoid(z2[h]);
   }
 
-  return softmax(z2);
+  // Hidden layer 3
+  std::vector<double> z3(HIDDEN3_SIZE), a3(HIDDEN3_SIZE);
+  for (int h = 0; h < HIDDEN3_SIZE; ++h) {
+    z3[h] = dot(W3[h], a2) + b3[h];
+    a3[h] = sigmoid(z3[h]);
+  }
+
+  // Output layer
+  std::vector<double> z4(OUTPUT_SIZE);
+  for (int o = 0; o < OUTPUT_SIZE; ++o) {
+    z4[o] = dot(W4[o], a3) + b4[o];
+  }
+
+  return softmax(z4);
 }
 
 int MLP::predictClass(const std::vector<double>& input) {
@@ -175,7 +216,7 @@ void MLP::train(const std::vector<std::pair<std::vector<double>, int>>& dataset,
     features.push_back(heel * heel);          // Heel squared
     features.push_back(toe * toe);            // Toe squared
 
-    X.push_back(features);                    // 6 dimensi sesuai engineered features
+    X.push_back(features);
 
     std::vector<double> y_onehot(OUTPUT_SIZE, 0.0);
     if (sample.second >= 0 && sample.second < OUTPUT_SIZE) {
@@ -194,6 +235,7 @@ void MLP::train(const std::vector<std::pair<std::vector<double>, int>>& dataset,
   double lr_decay         = 0.95;
   int    patience         = 50;
   int    no_improve_count = 0;
+  int    loss_counting    = 0;
 
   for (int epoch = 0; epoch < epochs; ++epoch) {
     double total_loss = 0.0;
@@ -209,70 +251,137 @@ void MLP::train(const std::vector<std::pair<std::vector<double>, int>>& dataset,
       const auto& x = X[i];
       const auto& y = Y[i];
 
-      // Forward pass
-      std::vector<double> z1(HIDDEN_SIZE), a1(HIDDEN_SIZE);
-      for (int h = 0; h < HIDDEN_SIZE; ++h) {
+      // Forward pass through all layers
+      // Hidden layer 1
+      std::vector<double> z1(HIDDEN1_SIZE), a1(HIDDEN1_SIZE);
+      for (int h = 0; h < HIDDEN1_SIZE; ++h) {
         z1[h] = dot(W1[h], x) + b1[h];
         a1[h] = sigmoid(z1[h]);
       }
 
-      std::vector<double> z2(OUTPUT_SIZE);
-      for (int o = 0; o < OUTPUT_SIZE; ++o) {
-        z2[o] = dot(W2[o], a1) + b2[o];
+      // Hidden layer 2
+      std::vector<double> z2(HIDDEN2_SIZE), a2(HIDDEN2_SIZE);
+      for (int h = 0; h < HIDDEN2_SIZE; ++h) {
+        z2[h] = dot(W2[h], a1) + b2[h];
+        a2[h] = sigmoid(z2[h]);
       }
 
-      std::vector<double> y_hat = softmax(z2);
+      // Hidden layer 3
+      std::vector<double> z3(HIDDEN3_SIZE), a3(HIDDEN3_SIZE);
+      for (int h = 0; h < HIDDEN3_SIZE; ++h) {
+        z3[h] = dot(W3[h], a2) + b3[h];
+        a3[h] = sigmoid(z3[h]);
+      }
 
-      // Calculate cross-entropy loss (better for classification)
+      // Output layer
+      std::vector<double> z4(OUTPUT_SIZE);
+      for (int o = 0; o < OUTPUT_SIZE; ++o) {
+        z4[o] = dot(W4[o], a3) + b4[o];
+      }
+
+      std::vector<double> y_hat = softmax(z4);
+
+      // Calculate cross-entropy loss
       double sample_loss = 0.0;
       for (int o = 0; o < OUTPUT_SIZE; ++o) {
-        if (y[o] > 0) {  // Only for the true class
+        if (y[o] > 0) {
           sample_loss += -y[o] * log(y_hat[o] + 1e-15);
         }
       }
       total_loss += sample_loss;
 
-      // Backpropagation using cross-entropy gradient
-      std::vector<double> error(OUTPUT_SIZE);
+      // Backpropagation
+      // Output layer error
+      std::vector<double> error4(OUTPUT_SIZE);
       for (int o = 0; o < OUTPUT_SIZE; ++o) {
-        error[o] = y_hat[o] - y[o];  // This is correct for softmax + cross-entropy
+        error4[o] = y_hat[o] - y[o];
       }
 
       // Output layer gradients
-      std::vector<std::vector<double>> dW2(OUTPUT_SIZE, std::vector<double>(HIDDEN_SIZE));
-      std::vector<double>              db2(OUTPUT_SIZE);
+      std::vector<std::vector<double>> dW4(OUTPUT_SIZE, std::vector<double>(HIDDEN3_SIZE));
+      std::vector<double>              db4(OUTPUT_SIZE);
 
       for (int o = 0; o < OUTPUT_SIZE; ++o) {
-        db2[o] = error[o];
-        for (int h = 0; h < HIDDEN_SIZE; ++h) {
-          dW2[o][h] = error[o] * a1[h];
+        db4[o] = error4[o];
+        for (int h = 0; h < HIDDEN3_SIZE; ++h) {
+          dW4[o][h] = error4[o] * a3[h];
         }
       }
 
-      // Hidden layer gradients
-      std::vector<double> dA1(HIDDEN_SIZE, 0.0);
-      for (int h = 0; h < HIDDEN_SIZE; ++h) {
+      // Hidden layer 3 error
+      std::vector<double> error3(HIDDEN3_SIZE, 0.0);
+      for (int h = 0; h < HIDDEN3_SIZE; ++h) {
         for (int o = 0; o < OUTPUT_SIZE; ++o) {
-          dA1[h] += W2[o][h] * error[o];
+          error3[h] += W4[o][h] * error4[o];
+        }
+        error3[h] *= sigmoid_derivative(z3[h]);
+      }
+
+      // Hidden layer 3 gradients
+      std::vector<std::vector<double>> dW3(HIDDEN3_SIZE, std::vector<double>(HIDDEN2_SIZE));
+      std::vector<double>              db3(HIDDEN3_SIZE);
+
+      for (int h = 0; h < HIDDEN3_SIZE; ++h) {
+        db3[h] = error3[h];
+        for (int j = 0; j < HIDDEN2_SIZE; ++j) {
+          dW3[h][j] = error3[h] * a2[j];
         }
       }
 
-      std::vector<std::vector<double>> dW1(HIDDEN_SIZE, std::vector<double>(INPUT_SIZE));
-      std::vector<double>              db1(HIDDEN_SIZE);
+      // Hidden layer 2 error
+      std::vector<double> error2(HIDDEN2_SIZE, 0.0);
+      for (int h = 0; h < HIDDEN2_SIZE; ++h) {
+        for (int k = 0; k < HIDDEN3_SIZE; ++k) {
+          error2[h] += W3[k][h] * error3[k];
+        }
+        error2[h] *= sigmoid_derivative(z2[h]);
+      }
 
-      for (int h = 0; h < HIDDEN_SIZE; ++h) {
-        double dZ1 = dA1[h] * sigmoid_derivative(z1[h]);
-        db1[h]     = dZ1;
+      // Hidden layer 2 gradients
+      std::vector<std::vector<double>> dW2(HIDDEN2_SIZE, std::vector<double>(HIDDEN1_SIZE));
+      std::vector<double>              db2(HIDDEN2_SIZE);
+
+      for (int h = 0; h < HIDDEN2_SIZE; ++h) {
+        db2[h] = error2[h];
+        for (int j = 0; j < HIDDEN1_SIZE; ++j) {
+          dW2[h][j] = error2[h] * a1[j];
+        }
+      }
+
+      // Hidden layer 1 error
+      std::vector<double> error1(HIDDEN1_SIZE, 0.0);
+      for (int h = 0; h < HIDDEN1_SIZE; ++h) {
+        for (int k = 0; k < HIDDEN2_SIZE; ++k) {
+          error1[h] += W2[k][h] * error2[k];
+        }
+        error1[h] *= sigmoid_derivative(z1[h]);
+      }
+
+      // Hidden layer 1 gradients
+      std::vector<std::vector<double>> dW1(HIDDEN1_SIZE, std::vector<double>(INPUT_SIZE));
+      std::vector<double>              db1(HIDDEN1_SIZE);
+
+      for (int h = 0; h < HIDDEN1_SIZE; ++h) {
+        db1[h] = error1[h];
         for (int j = 0; j < INPUT_SIZE; ++j) {
-          dW1[h][j] = dZ1 * x[j];
+          dW1[h][j] = error1[h] * x[j];
         }
       }
 
-      // Update parameters with current learning rate
+      // Update all parameters
+      add_to(W4, dW4, -learning_rate);
+      add_to(b4, db4, -learning_rate);
+      add_to(W3, dW3, -learning_rate);
+      add_to(b3, db3, -learning_rate);
       add_to(W2, dW2, -learning_rate);
       add_to(b2, db2, -learning_rate);
       add_to(W1, dW1, -learning_rate);
       add_to(b1, db1, -learning_rate);
+      
+      loss_counting++;
+      if (loss_counting % 10000 == 0) {
+        loss_history.push_back(total_loss);
+      }
     }
 
     // Calculate accuracy
@@ -287,7 +396,8 @@ void MLP::train(const std::vector<std::pair<std::vector<double>, int>>& dataset,
     double avg_loss = total_loss / n;
     double accuracy = 100.0 * correct / n;
 
-    loss_history.push_back(avg_loss);
+    // Store loss and accuracy
+    // loss_history.push_back(avg_loss);
     accuracy_history.push_back(accuracy);
 
     // Adaptive learning rate
@@ -314,8 +424,8 @@ void MLP::train(const std::vector<std::pair<std::vector<double>, int>>& dataset,
     }
 
     // Early stopping if we achieve high accuracy
-    if (accuracy > 90.0) {
-      std::cout << "Early stopping - high accuracy achieved!" << std::endl;
+    if (avg_loss < 1e-4) {
+      std::cout << "Early stopping - 1e-6 achieved!" << std::endl;
       break;
     }
   }
