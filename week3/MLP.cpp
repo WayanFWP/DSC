@@ -62,6 +62,10 @@ int main() {
 
   mlp.train(inputs, targets, EPOCHS);
 
+  global_results.training_errors_per_iteration = mlp.get_iteration_errors();
+  global_results.iteration_numbers             = mlp.get_iteration_numbers();
+  global_results.training_errors_per_epoch     = mlp.get_training_errors();
+
   while (true) {
     auto promptToDisplayDataset = []() -> bool {
       char choice;
@@ -78,6 +82,8 @@ int main() {
     std::cout << "\n🤖 MLP Classifier\n"
               << "Enter 1 to test the model on /test directory\n"
               << "Enter 2 to input your own matrix\n"
+              << "Enter 3 to save all results and show statistics\n"
+              << "Enter 0 to exit\n"
               << "Your choice: ";
     std::cin >> mode;
 
@@ -87,8 +93,16 @@ int main() {
       break;
     case 1:
       test_files(mlp);
+      break;
+    case 3:
+      print_all_statistics();
+      save_all_results();
+      break;
+    case 0:
+      print_all_statistics();
+      save_all_results();
+      return 0;
     default:
-      cout << "Invalid choice! Please enter 1 or 2." << endl;
       break;
     }
   }
