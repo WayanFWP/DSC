@@ -22,8 +22,12 @@ int main() {
 
   MLP model;
   std::cout << "Training..." << std::endl;
-  model.train(training_data, 200, 0.1);  // epoch 500, learning rate 0.1
+  model.train(training_data, 200, 0.1);  // epoch 200, learning rate 0.1
   std::cout << "Training section done." << std::endl;
+
+  // Save both iteration and epoch error data
+  model.saveIterationErrorData("iteration_error.txt");
+  model.saveEpochErrorData("epoch_error.txt");
 
   if (!testCase.loadFromFile("test/testCase.txt"))
     return 1;
@@ -56,13 +60,20 @@ int main() {
   double accuracy = 100.0 * correct / testData.size();
 
   while (true) {
-    std::cout << "\nDo you want to see the accuracy? (a): ";
+    std::cout << "\nChoose option - (a)ccuracy, (e)poch error plot, (i)teration error plot, (q)uit: ";
     char choice;
     std::cin >> choice;
-    if (choice == 'a')
+    if (choice == 'a') {
       std::cout << "\nAccuracy: " << accuracy << "%" << std::endl;
-    else
+    } else if (choice == 'e') {
+      std::cout << "Generating epoch error plot..." << std::endl;
+      system("python3 plot_epoch_error.py");
+    } else if (choice == 'i') {
+      std::cout << "Generating iteration error plot..." << std::endl;
+      system("python3 plot_iteration_error.py");
+    } else {
       break;
+    }
   }
 
   return 0;

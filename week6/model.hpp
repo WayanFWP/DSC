@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <ctime>
 #include <vector>
+#include <fstream>
+#include <iostream>
 
 class MLP {
  private:
@@ -28,10 +30,15 @@ class MLP {
   double hidden2[HIDDEN2_SIZE];
   double output;
 
+  // Error tracking
+  std::vector<double> epoch_errors;
+  std::vector<double> iteration_errors;  // Track error per iteration
+
   double sigmoid(double x) { return 1.0 / (1.0 + std::exp(-x)); }
   double sigmoid_derivative(double x) { return x * (1.0 - x); }
 
  public:
+  // ...existing code...
   MLP() {
     std::srand(std::time(0));
 
@@ -69,7 +76,12 @@ class MLP {
   }
 
   void train(const std::vector<std::pair<std::vector<double>, int>>& dataset, int epochs = 1000, double lr = 0.1) {
+    epoch_errors.clear();
+    iteration_errors.clear();
+    
     for (int epoch = 0; epoch < epochs; ++epoch) {
+      double total_error = 0.0;
+      
       for (const auto& sample : dataset) {
         double x1     = sample.first[0];
         double x2     = sample.first[1];
@@ -90,8 +102,14 @@ class MLP {
 
         output = sigmoid(sum_out);
 
-        // Backpropagation
+        // Calculate error (Mean Squared Error)
+        double error = 0.5 * (target - output) * (target - output);
+        total_error += error;
         
+        // Store error for this iteration
+        iteration_errors.push_back(error);
+
+        // Backpropagation
         double error_output = (target - output) * sigmoid_derivative(output);
 
         double error_hidden2[HIDDEN2_SIZE];
@@ -117,7 +135,55 @@ class MLP {
         }
         for (int j = 0; j < HIDDEN1_SIZE; ++j) bias_hidden1[j] += lr * error_hidden1[j];
       }
+      
+      // Store average error for this epoch
+      double avg_error = total_error / dataset.size();
+      epoch_errors.push_back(avg_error);
+      
+      // Print error every 50 epochs
+      if (epoch % 50 == 0 || epoch == epochs - 1) {
+        std::cout << "Epoch " << epoch << ", Error: " << avg_error << std::endl;
+      }
     }
+  }
+
+  // Function to save iteration error data for plotting
+  void saveIterationErrorData(const std::string& filename) {
+    std::ofstream file(filename);
+    if (file.is_open()) {
+      for (size_t i = 0; i < iteration_errors.size(); ++i) {
+        file << i << " " << iteration_errors[i] << std::endl;
+      }
+      file.close();
+      std::cout << "Iteration error data saved to " << filename << std::endl;
+    }
+  }
+
+  // Function to save epoch error data for plotting
+  void saveEpochErrorData(const std::string& filename) {
+    std::ofstream file(filename);
+    if (file.is_open()) {
+      for (size_t i = 0; i < epoch_errors.size(); ++i) {
+        file << i << " " << epoch_errors[i] << std::endl;
+      }
+      file.close();
+      std::cout << "Epoch error data saved to " << filename << std::endl;
+    }
+  }
+
+  // Legacy function name for compatibility
+  void saveErrorData(const std::string& filename) {
+    saveEpochErrorData(filename);
+  }
+
+  // Get iteration error data
+  const std::vector<double>& getIterationErrorData() const {
+    return iteration_errors;
+  }
+
+  // Get epoch error data
+  const std::vector<double>& getEpochErrorData() const {
+    return epoch_errors;
   }
 };
 
