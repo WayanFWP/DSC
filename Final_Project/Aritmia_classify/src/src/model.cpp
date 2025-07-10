@@ -414,13 +414,15 @@ void Model::train(const std::vector<std::vector<double>> &X, const std::vector<s
       
       if(iterations % 10000 == 0) {
         std::cout << std::fixed << std::setprecision(6);
+        std::cout << "Epoch: " << epoch << ", Sample: " << i << ", ";
+        std::cout << "Sample MSE: " << sampleMSE << ", ";
+        std::cout << "MSE: " << totalMSE / (i + 1) << ", ";
         std::cout << "Iteration: " << iterations << ", Sample MSE: " << sampleMSE << std::endl;
         mseHistory.push_back(sampleMSE);  // Store MSE for this sample
       }
       iterations++;  // Increment iteration count
     }
-
-
+    
     // Calculate average MSE
     avgMSE = totalMSE / n;
 

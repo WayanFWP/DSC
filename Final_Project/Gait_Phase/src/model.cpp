@@ -398,7 +398,7 @@ void MLP::train(const std::vector<std::pair<std::vector<double>, int>>& dataset,
 
     // Store loss and accuracy
     // loss_history.push_back(avg_loss);
-    accuracy_history.push_back(accuracy);
+    // accuracy_history.push_back(accuracy);
 
     // Adaptive learning rate
     if (avg_loss >= prev_loss) {
